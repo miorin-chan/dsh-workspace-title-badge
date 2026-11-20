@@ -56,6 +56,8 @@
 - 用 `docs/scripts/reflow md <path>` 重排修改过的英文 Markdown。
   命令需要 Python 3.11 或更新版本。
 - 在项目根运行 `prek install`，之后提交时会自动重排暂存的 Markdown。
+- 在 DSH 沙箱内提交时，用 `PREK_HOME="${TMPDIR:?}/prek-dsh" git commit -m "<commit message>"`，
+  让 reflow 钩子照常运行，并把 `prek` 的缓存和日志写到可写的临时目录。
 
 ### 升级复验
 
