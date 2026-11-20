@@ -1,17 +1,20 @@
 # dsh-session-workspace-label
 
-Shows the open session's **workspace name** beside its title while the sidebar lists sessions in one flat list.
+Shows the open session's **workspace name** beside its title while the sidebar lists sessions in one flat list,
+with an ellipsis that opens that workspace's sidebar actions menu — everything except **Delete**.
 
 The sidebar's flat grouping mixes sessions from every workspace and draws no workspace header,
 so the name of the workspace a conversation belongs to is not visible anywhere.
 This plugin puts it in the conversation header — muted, on one line,
 clipped when long — using the sidebar's own presentation: the shared folder glyph and,
 for the first-use workspace, the same localized default name.
+The ellipsis beside the name opens the same entries the sidebar's workspace "..." menu offers,
+including actions contributed by other plugins, and leaves **Delete** out.
 It leaves the header untouched when the sidebar already names its groups.
 
 | Sidebar grouping | Before | With this plugin |
 | --- | --- | --- |
-| In one list | header shows the session title only | the workspace name with its folder icon sits immediately after the title |
+| In one list | header shows the session title only | the workspace name with its folder icon sits immediately after the title, followed by an ellipsis |
 | By workspace / workspace tree | the sidebar names each workspace | nothing changes |
 | Session outside every workspace | — | nothing is added |
 | First-use workspace titled `default-workspace` | the raw directory name | the localized default name, e.g. **Default workspace** / **默认工作区** |
@@ -20,8 +23,9 @@ It leaves the header untouched when the sidebar already names its groups.
 ## Requirements
 
 - DeepSeek Harness 0.2.2-rc.3 or newer.
-  The conversation header must declare the `conversation.session.header.actions` slot
-  and the workspace UI must provide the `useWorkspaces` standard hook; both ship in the default Web app.
+  The conversation header must declare the `conversation.session.header.actions` slot,
+  the workspace UI must provide the `useWorkspaces` standard hook,
+  and the context-menu plugin must provide the `workspace` target family; all ship in the default Web app.
 - Works in the Desktop window and in the browser page.
 
 ## Install
@@ -38,9 +42,25 @@ The plugin appears in **Plugins** as **Workspace name in the session header** / 
 - A workspace still titled `default-workspace` is labeled with the same localized default name
   as the sidebar (**Default workspace**, **默认工作区**, …); a renamed workspace keeps its own title.
 - Hover the name for the tooltip **Workspace: <name>**.
+- Press the ellipsis beside the name to open the workspace's actions.
+  The menu is the sidebar's menu, not a copy: **Rename**, the native **Show in Finder** entry
+  when the Desktop app offers one, and any workspace action another plugin contributes.
+  **Delete workspace** is the one entry this plugin removes: it stays in the sidebar's own workspace menu,
+  reachable after switching the sidebar to **By workspace** or **By workspace tree**.
 - Renaming a workspace updates the label; a session that moves between workspaces follows it.
-- Switch the sidebar to **By workspace** or **By workspace tree** and the label disappears,
+- Switch the sidebar to **By workspace** or **By workspace tree** and the label and its button disappear,
   because the sidebar shows the name already.
+
+## How the menu stays official
+
+ui-workspace declares its workspace menu as structured context-menu contributions to the `workspace` target family,
+so the entries do not live in a component this plugin could call.
+The plugin declares its own target family and contributes one bridge entry.
+Opening the ellipsis resolves the sidebar's `workspace` target through the public `contextMenus.resolve()` API,
+forwards every action except the `workspace.delete` contribution, and delegates selection back to that occurrence.
+The shared popup renders the rows, icons, shortcut hints, separators, danger styling,
+submenus, permission filtering, dialogs, and failure feedback; the plugin never copies or reimplements them.
+See [the design note](docs/workspace-menu.md).
 
 ## Limitations
 
@@ -52,11 +72,18 @@ The plugin appears in **Plugins** as **Workspace name in the session header** / 
 - The label borrows the sidebar's shared icon module and the common locale entry `workspace.defaultName`.
   If a future DSH release removes either, the label falls back to the stored title
   and the text-only form instead of failing.
-- The label is decoration: it is not a button, does not open the workspace, and adds no menu entry.
-- The flat list itself is untouched; the label never appears in the sidebar list.
-- Sessions outside every workspace (the ungrouped bucket) get no label rather than a generic name.
+- The menu bridge depends on the sidebar keeping the `workspace` target family
+  and calling its destructive contribution `workspace.delete`.
+  If a DSH release renames that contribution, **Delete** reappears until the plugin's filter is updated;
+  nothing else changes.
+- The bridge waits up to 900ms for the sidebar's providers, just under the shared popup's own budget.
+  An action that resolves later appears the next time the menu opens.
+- The button appears only where the label appears.
+  When the current peer may perform no workspace action, the menu opens empty rather than hiding the button.
+- Sessions outside every workspace (the ungrouped bucket) get no label and no button.
 
 ## Unload
 
-Disable the bundle in **Plugins**. The header entry, the poll and the storage listener are removed;
+Disable the bundle in **Plugins**.
+The header entry, the menu bridge, the poll and the storage listener are removed;
 nothing is written to storage or to the workspace view store.

@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Arbeitsbereichsname im Sitzungskopf",
-    "description": "Zeigt den Arbeitsbereichsnamen der geöffneten Sitzung neben ihrem Titel, solange die Seitenleiste die Sitzungen in einer einzigen Liste zeigt. Gruppierte Ansichten nennen den Arbeitsbereich bereits, dort bleibt die Beschriftung aus. Der Name folgt einer Umbenennung; Sitzungen ohne Arbeitsbereich zeigen keinen."
+    "description": "Zeigt den Arbeitsbereichsnamen der geöffneten Sitzung neben ihrem Titel, solange die Seitenleiste die Sitzungen in einer einzigen Liste zeigt. Ein Auslassungszeichen neben dem Namen öffnet das Aktionsmenü des Arbeitsbereichs aus der Seitenleiste, ohne den Arbeitsbereich zu löschen. Gruppierte Ansichten nennen den Arbeitsbereich bereits, dort bleibt die Beschriftung aus. Der Name folgt einer Umbenennung; Sitzungen ohne Arbeitsbereich zeigen keinen."
   }
 }

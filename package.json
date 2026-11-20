@@ -1,9 +1,9 @@
 {
   "name": "dsh-session-workspace-label",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "license": "MIT",
-  "description": "Shows the open session's workspace name beside its title while the sidebar lists sessions in one flat list.",
+  "description": "Shows the open session's workspace name beside its title while the sidebar lists sessions in one flat list, with an ellipsis that opens the sidebar workspace actions menu without delete.",
   "type": "module",
   "keywords": [
     "deepseek-harness",
@@ -12,7 +12,8 @@
     "workspace",
     "header",
     "session",
-    "label"
+    "label",
+    "context-menu"
   ],
   "exports": {
     ".": "./index.js",
@@ -46,7 +47,8 @@
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-renderer",
         "@deepseek-ai/dsh-client-ui-conversation",
-        "@deepseek-ai/dsh-client-ui-workspace"
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-ui-context-menu"
       ]
     }
   },

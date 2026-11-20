@@ -5,7 +5,8 @@
  * draws no Workspace header; the grouped modes name each Workspace instead.
  * This module puts the open Session's Workspace name immediately after the
  * Session title in the conversation header, and only while the sidebar lists
- * sessions flat.
+ * sessions flat. An ellipsis button beside that name opens the sidebar
+ * Workspace's own "More" menu, without its delete action.
  *
  * Seam: the conversation header declares the public
  * `conversation.session.header.actions` list. An entry there receives the
@@ -23,6 +24,19 @@
  * title stays verbatim, and the shared icon set supplies the closed folder
  * glyph. Both are optional and degrade to the plain title.
  *
+ * The menu is not a component of the sidebar: ui-workspace declares it as
+ * structured contributions to the shared context-menu target family
+ * `workspace`, so the entries, their order, icons, separators, permission
+ * checks, dialogs and failure toasts all belong to the contributing plugins.
+ * Copying that list here would rot. Instead this plugin declares its own target
+ * family and contributes one bridge entry: opening the header button resolves
+ * the sidebar's `workspace` target through `ctx.contextMenus.resolve()`,
+ * forwards every action except the `workspace.delete` contribution, and
+ * delegates selection back to that occurrence. The shared popup then draws the
+ * rows itself, so the menu stays official and dynamically gains contributions
+ * from any other plugin. The bridge is read-only: it never registers, mutates
+ * or dismisses the sidebar's own entries.
+ *
  * The grouping mode is the one exception: ui-workspace keeps it in a browser
  * store persisted as `dsh.workspace.view.v5`, and no client service exposes
  * it. This module reads that key read-only — never writes it — and watches it
@@ -37,6 +51,10 @@
  *   disappearing, so the context survives a DSH upgrade.
  * - No standard hook, no matching Workspace, no title, or an empty path
  *   renders nothing at all and leaves the header exactly as DSH draws it.
+ * - No context-menu service leaves the label a plain display label: the button
+ *   is omitted rather than opening a broken popup. An empty resolved menu still
+ *   opens the shared popup empty, matching how the sidebar treats a provider
+ *   that offers no action.
  *
  * Every listener and the poll are registered inside `ctx.effect` and removed
  * on unload with the slot entry.
@@ -50,7 +68,8 @@ window.__ModuleLoader__.load({
     /**
      * The sidebar's folder glyph comes from the shared product icon set, so the
      * row and this label stay optically identical. The module is optional: a
-     * shell without it loses the glyph, not the label.
+     * shell without it loses the glyph, not the label. The ellipsis glyph uses
+     * the same module and falls back to a local one when it is missing.
      */
     let primitives
     try {
@@ -60,6 +79,9 @@ window.__ModuleLoader__.load({
     }
     const FolderIcon = typeof primitives?.IconFolderCloseRegular === 'function'
       ? primitives.IconFolderCloseRegular
+      : undefined
+    const EllipsisIcon = typeof primitives?.IconEllipsisOutlineRegular === 'function'
+      ? primitives.IconEllipsisOutlineRegular
       : undefined
 
     const NS = 'dsh-session-workspace-label'
@@ -86,16 +108,32 @@ window.__ModuleLoader__.load({
      * what keeps the workspace name literally next to the title.
      */
     const LEADING_ORDER = -20
+    /** The context-menu target family the sidebar's Workspace entries use. */
+    const WORKSPACE_TARGET = 'workspace'
+    /** Our own family: every activation bridges the Workspace family through it. */
+    const MENU_TARGET = 'dsh-session-workspace-label.workspace'
+    /**
+     * Contribution prefix of the sidebar's destructive entry. Action view ids
+     * are `workspace.delete/<action id>`; the contribution stays the stable
+     * unit, so a rename of its single action does not leak it through.
+     */
+    const DELETE_CONTRIBUTION = 'workspace.delete/'
+    /**
+     * The shared popup waits for every contribution before opening; the menu
+     * budget is 1000ms. Return what has resolved shortly before that deadline
+     * so a slow provider cannot turn our bridge into a timeout notice.
+     */
+    const MENU_READY_BUDGET_MS = 900
 
     const LABELS = {
-      en: { hint: 'Workspace: {workspace}' },
-      zh: { hint: '工作区：{workspace}' },
-      ja: { hint: 'ワークスペース：{workspace}' },
-      de: { hint: 'Arbeitsbereich: {workspace}' },
-      es: { hint: 'Espacio de trabajo: {workspace}' },
-      fr: { hint: 'Espace de travail : {workspace}' },
-      pt: { hint: 'Espaço de trabalho: {workspace}' },
-      ru: { hint: 'Рабочая область: {workspace}' },
+      en: { hint: 'Workspace: {workspace}', menu: 'Workspace actions for {workspace}' },
+      zh: { hint: '工作区：{workspace}', menu: '工作区操作：{workspace}' },
+      ja: { hint: 'ワークスペース：{workspace}', menu: 'ワークスペースの操作：{workspace}' },
+      de: { hint: 'Arbeitsbereich: {workspace}', menu: 'Aktionen für {workspace}' },
+      es: { hint: 'Espacio de trabajo: {workspace}', menu: 'Acciones de {workspace}' },
+      fr: { hint: 'Espace de travail : {workspace}', menu: 'Actions de {workspace}' },
+      pt: { hint: 'Espaço de trabalho: {workspace}', menu: 'Ações de {workspace}' },
+      ru: { hint: 'Рабочая область: {workspace}', menu: 'Действия с {workspace}' },
     }
 
     /**
@@ -110,14 +148,12 @@ window.__ModuleLoader__.load({
       display: 'inline-flex',
       alignItems: 'center',
       gap: '4px',
-      maxWidth: '18em',
       minWidth: 0,
       verticalAlign: 'middle',
       fontSize: '12px',
       lineHeight: '1.4',
-      opacity: '0.6',
+      color: 'var(--dsw-alias-label-secondary)',
       marginInlineStart: '-8px',
-      cursor: 'default',
     }
 
     const ICON_STYLE = {
@@ -128,9 +164,50 @@ window.__ModuleLoader__.load({
 
     const TEXT_STYLE = {
       minWidth: 0,
+      // The title row clips trailing actions on a narrow window; a shorter cap
+      // lets the name truncate before the menu button reaches that edge.
+      maxWidth: '14em',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
+    }
+
+    /**
+     * A hairline rule keeps the actions button from reading as a second
+     * truncation ellipsis on a long Workspace name.
+     */
+    const DIVIDER_STYLE = {
+      flex: 'none',
+      width: '1px',
+      height: '12px',
+      background: 'var(--dsw-alias-border-l1)',
+      marginInline: '2px',
+    }
+
+    /**
+     * 24px matches the sidebar's Workspace action target. The glyph is one size
+     * smaller than the row's so the control still sits inside the header's
+     * title band; the hit box does not shrink with it.
+     */
+    const MENU_BUTTON_STYLE = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flex: 'none',
+      width: '24px',
+      height: '24px',
+      padding: 0,
+      border: 0,
+      borderRadius: 'var(--dsw-radius-md)',
+      background: 'transparent',
+      color: 'var(--dsw-alias-label-tertiary)',
+      cursor: 'pointer',
+    }
+
+    const MENU_BUTTON_HOVER_STYLE = {
+      ...MENU_BUTTON_STYLE,
+      background: 'var(--dsw-alias-interactive-bg-hover)',
+      color: 'var(--dsw-alias-label-primary)',
     }
 
     const browserWindow = () => (typeof window === 'undefined' ? undefined : window)
@@ -242,17 +319,113 @@ window.__ModuleLoader__.load({
         : ''
     }
 
+    /** Is this resolved view the sidebar's destructive Workspace entry? */
+    const isDeleteView = view => typeof view?.id === 'string'
+      && view.id.startsWith(DELETE_CONTRIBUTION)
+
+    /**
+     * Project one resolved sidebar view onto the action the shared popup
+     * accepts. Every presentation field is forwarded unchanged — the popup's
+     * `contextMenu.icon` slot, shortcut catalog, danger and submenu styling
+     * then do exactly what they do for the sidebar. Leaf actions delegate
+     * selection back to the sidebar occurrence instead of reimplementing it.
+     * @param view - one immutable presentation from `resolve()`.
+     * @param state - the sidebar occurrence and whether a leaf was chosen.
+     */
+    const bridgeAction = (view, state) => {
+      const action = { id: view.id, label: view.label }
+      if (view.commandId !== undefined) action.commandId = view.commandId
+      if (view.disabled !== undefined) action.disabled = view.disabled
+      if (view.icon !== undefined) action.icon = { ...view.icon }
+      if (view.danger !== undefined) action.danger = view.danger
+      if (view.separatorBefore !== undefined) action.separatorBefore = view.separatorBefore
+      if (view.afterContent !== undefined) action.afterContent = view.afterContent
+      if (Array.isArray(view.children)) {
+        action.children = view.children.map(child => bridgeAction(child, state))
+      } else {
+        action.run = () => {
+          state.selected = true
+          state.inner.select(view.id)
+        }
+      }
+      return action
+    }
+
+    /**
+     * Resolve the sidebar's Workspace menu for one activation of our target.
+     *
+     * The shared popup disposes the outer occurrence before it runs the chosen
+     * callback, so the inner occurrence is released from a microtask: by then a
+     * leaf's `run` has marked the occurrence selected and `select()` has
+     * released it itself. Dismissal or unload releases it without running.
+     * @param menus - the client context-menu service.
+     * @param target - our target value; passed through as the Workspace value.
+     * @param signal - aborted on dismissal, unload, or a newer preparation.
+     * @returns the bridged actions, or none when the sidebar offers no menu.
+     */
+    const resolveWorkspaceMenu = async (menus, target, signal) => {
+      let inner
+      try {
+        inner = menus.resolve({ kind: WORKSPACE_TARGET, value: target })
+      } catch {
+        return []
+      }
+      const state = { inner, selected: false }
+      let released = false
+      const release = () => {
+        if (released) return
+        released = true
+        try { inner.dispose() } catch { /* an already released occurrence is fine */ }
+      }
+      signal.addEventListener('abort', () => {
+        queueMicrotask(() => { if (!state.selected) release() })
+      }, { once: true })
+      const aborted = new Promise(resolve => {
+        if (signal.aborted) resolve()
+        else signal.addEventListener('abort', resolve, { once: true })
+      })
+      let budget
+      const settled = new Promise(resolve => { budget = setTimeout(resolve, MENU_READY_BUDGET_MS) })
+      try {
+        try {
+          await Promise.race([inner.ready.catch(() => {}), settled, aborted])
+        } finally {
+          clearTimeout(budget)
+        }
+        if (signal.aborted) {
+          release()
+          return []
+        }
+        return inner.source.getSnapshot().filter(view => !isDeleteView(view)).map(view => bridgeAction(view, state))
+      } catch {
+        release()
+        return []
+      }
+    }
+
     /**
      * The label itself. Both hooks are bound by the renderer at the slot
      * position; the component never subscribes on its own.
      * @param props - Session scope id, the standard hooks, and the bound locale.
      */
-    function WorkspaceLabel({ sessionId, useWorkspaces, useFlatSidebar, t }) {
+    function WorkspaceLabel({ sessionId, useWorkspaces, useFlatSidebar, useMenuReady, useMenuActive, requestMenu, closeMenu, t }) {
+      const [menuHovered, setMenuHovered] = React.useState(false)
       const items = useWorkspaces(snapshot => snapshot?.items ?? STABLE_EMPTY_ITEMS)
       const visible = useFlatSidebar(groupBy => groupBy === 'flat' || groupBy === 'unknown')
+      // An older renderer may not bind the menu hooks; keep the label intact.
+      const readMenuReady = typeof useMenuReady === 'function' ? useMenuReady : () => false
+      const readMenuActive = typeof useMenuActive === 'function' ? useMenuActive : () => null
+      const menuReady = readMenuReady(value => value === true)
+      const activeTarget = readMenuActive(value => value)
       if (visible !== true) return null
-      const label = workspaceLabel(findWorkspace(items, sessionId), resolveDefaultName(t))
+      const workspace = findWorkspace(items, sessionId)
+      const label = workspaceLabel(workspace, resolveDefaultName(t))
       if (label === '') return null
+      // The sidebar draws a Workspace menu only when the row has a path; the
+      // native reveal entry needs it, so the header button follows the same rule.
+      const menuPath = typeof workspace.path === 'string' && workspace.path !== ''
+        ? workspace.path
+        : undefined
       const children = []
       if (FolderIcon !== undefined) {
         children.push(h('span', {
@@ -261,13 +434,70 @@ window.__ModuleLoader__.load({
           'aria-hidden': 'true',
         }, h(FolderIcon, { size: 14 })))
       }
-      children.push(h('span', { key: 'text', style: TEXT_STYLE }, label))
+      children.push(h('span', {
+        key: 'text',
+        style: TEXT_STYLE,
+        title: t('hint', { workspace: label }),
+      }, label))
+      if (menuReady && typeof requestMenu === 'function' && menuPath !== undefined) {
+        const expanded = activeTarget?.kind === MENU_TARGET
+          && activeTarget.value?.workspaceId === workspace.workspaceId
+        children.push(h('span', { key: 'divider', 'aria-hidden': 'true', style: DIVIDER_STYLE }))
+        children.push(h('button', {
+          key: 'menu',
+          type: 'button',
+          'data-session-workspace-menu': '',
+          // The shared popup exempts explicit triggers from its outside-click
+          // dismissal; without this, a second click on the button would close
+          // the menu during pointerdown and immediately reopen it on click.
+          'data-context-menu-trigger': '',
+          'aria-label': t('menu', { workspace: label }),
+          'aria-haspopup': 'menu',
+          'aria-expanded': expanded,
+          title: t('menu', { workspace: label }),
+          style: menuHovered ? MENU_BUTTON_HOVER_STYLE : MENU_BUTTON_STYLE,
+          onPointerDown: event => { event.stopPropagation() },
+          onPointerEnter: () => { setMenuHovered(true) },
+          onPointerLeave: () => { setMenuHovered(false) },
+          onClick: event => {
+            event.stopPropagation()
+            event.currentTarget.focus({ preventScroll: true })
+            // The shared popup toggles by its own button identity; this button
+            // owns the same behaviour through the captured-open target, so a
+            // second press closes instead of reopening at a shifted anchor.
+            if (expanded) {
+              if (typeof closeMenu === 'function') closeMenu()
+              return
+            }
+            const rect = event.currentTarget.getBoundingClientRect()
+            requestMenu({
+              kind: MENU_TARGET,
+              value: {
+                workspaceId: workspace.workspaceId,
+                path: menuPath,
+                displayTitle: label,
+              },
+            }, { x: rect.left, y: rect.bottom })
+          },
+        }, EllipsisIcon !== undefined ? h(EllipsisIcon, { size: 16 }) : inlineEllipsis()))
+      }
       return h('span', {
         'data-session-workspace-label': '',
-        title: t('hint', { workspace: label }),
         style: STYLE,
       }, ...children)
     }
+
+    /** Local three-dot fallback for shells without the shared ellipsis glyph. */
+    const inlineEllipsis = () => h('svg', {
+      width: 16,
+      height: 16,
+      viewBox: '0 0 16 16',
+      fill: 'currentColor',
+      'aria-hidden': 'true',
+    },
+    h('circle', { cx: 3, cy: 8, r: 1.4 }),
+    h('circle', { cx: 8, cy: 8, r: 1.4 }),
+    h('circle', { cx: 13, cy: 8, r: 1.4 }))
 
     return {
       inject: ['locale', 'slots'],
@@ -276,6 +506,9 @@ window.__ModuleLoader__.load({
 
         const storage = readStorage()
         const flatSidebar = createSignal(readGroupBy(storage))
+        const menuReady = createSignal(false)
+        const menuActive = createSignal(null)
+        let menuService
 
         ctx.effect(() => {
           const read = () => { flatSidebar.set(readGroupBy(storage)) }
@@ -292,12 +525,52 @@ window.__ModuleLoader__.load({
           }
         }, `${NS}: view store watcher`)
 
+        ctx.inject(['contextMenus'], child => {
+          child.effect(() => {
+            menuService = child.contextMenus
+            menuReady.set(true)
+            const active = child.contextMenus.active
+            const publish = () => { menuActive.set(active.getSnapshot()) }
+            const unsubscribe = active.subscribe(publish)
+            publish()
+            return () => {
+              unsubscribe()
+              menuService = undefined
+              menuReady.set(false)
+              menuActive.set(null)
+            }
+          }, `${NS}: menu service`)
+          child.effect(() => child.contextMenus.register({
+            id: 'workspace.menu',
+            target: MENU_TARGET,
+            order: 0,
+            resolve: (target, signal) => resolveWorkspaceMenu(child.contextMenus, target, signal),
+          }), `${NS}: workspace menu bridge`)
+        })
+
+        const requestMenu = (target, point) => {
+          if (menuService === undefined) return
+          try {
+            menuService.open(target, point)
+          } catch (error) {
+            console.error(`${NS}: could not open the workspace menu`, error)
+          }
+        }
+        const closeMenu = () => {
+          if (menuService === undefined) return
+          try {
+            menuService.close()
+          } catch (error) {
+            console.error(`${NS}: could not close the workspace menu`, error)
+          }
+        }
+
         ctx.effect(() => ctx.slots.inject(SLOT, () => ctx.slots.register({
           name: SLOT,
           id: ENTRY_ID,
           order: LEADING_ORDER,
           locale: NS,
-          inject: sessionId => ({ sessionId, hooks: { flatSidebar } }),
+          inject: sessionId => ({ sessionId, requestMenu, closeMenu, hooks: { flatSidebar, menuReady, menuActive } }),
         }, WorkspaceLabel)), `${NS}: header entry`)
       },
     }
