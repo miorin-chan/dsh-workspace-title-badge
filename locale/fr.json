@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Nom de l'espace de travail dans l'en-tête de session",
-    "description": "Affiche le nom de l'espace de travail de la session ouverte à côté de son titre tant que la barre latérale liste les sessions en une seule liste. Un bouton à points de suspension à côté du nom ouvre le menu d'actions de l'espace de travail de la barre latérale, sans supprimer l'espace de travail. Les vues groupées nomment déjà chaque espace de travail, la mention y reste donc masquée. Le nom suit un renommage ; une session hors espace de travail n'en affiche aucun."
+    "description": "Affiche le nom de l'espace de travail de la session ouverte à côté de son titre tant que la barre latérale liste les sessions en une seule liste. Un bouton à points de suspension à côté du nom, ou un clic droit sur celui-ci, ouvre le menu d'actions de l'espace de travail de la barre latérale, sans supprimer l'espace de travail. Les vues groupées nomment déjà chaque espace de travail, la mention y reste donc masquée. Le nom suit un renommage ; une session hors espace de travail n'en affiche aucun."
   }
 }

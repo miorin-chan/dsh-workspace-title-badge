@@ -198,13 +198,37 @@ function unmount(fake) {
 }
 
 /**
+ * A stand-in for ui-context-menu's root `useContextMenu` factory. It records
+ * the target each render binds and returns the handler shape the real binding
+ * produces; the official handler body stays in DSH, so the tests pin the
+ * gesture target and options rather than reimplement the popup call.
+ */
+function fakeGesture() {
+  const calls = { bound: [] }
+  return {
+    calls,
+    useContextMenu: () => ({
+      getTriggerProps(target, handlers = {}) {
+        calls.bound.push({ target, handlers })
+        return {
+          ...handlers,
+          tabIndex: handlers.tabIndex ?? 0,
+          onContextMenu: () => {},
+          onKeyDown: () => {},
+        }
+      },
+    }),
+  }
+}
+
+/**
  * Render the registered entry the way the renderer would: Session id from the
  * inject factory, hooks bound to the current values.
  * @param fake - the mounted context.
- * @param options - mode, Workspaces snapshot, Session, and menu state.
+ * @param options - mode, Workspaces snapshot, Session, menu state, and gesture.
  */
 function render(fake, {
-  mode = 'workspace', workspaces = [], sessionId = 'session-1', t, active = null,
+  mode = 'workspace', workspaces = [], sessionId = 'session-1', t, active = null, useContextMenu,
 } = {}) {
   const { descriptor, Component } = fake.entries[0]
   const injected = descriptor.inject(sessionId)
@@ -218,6 +242,7 @@ function render(fake, {
       if (key === 'workspace.defaultName') return '默认工作区'
       return `${key}:${params?.workspace}`
     }),
+    ...(useContextMenu === undefined ? {} : { useContextMenu }),
   })
 }
 
@@ -550,6 +575,75 @@ test('opens the bridged target at the button’s bottom-left', () => {
     },
     point: { x: 120, y: 48 },
   }])
+  unmount(fake)
+})
+
+test('binds the official right-click gesture to the same target as the button', () => {
+  const menus = fakeMenus()
+  const gesture = fakeGesture()
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus })
+  const node = render(fake, {
+    mode: 'flat', workspaces: [WORKSPACE], useContextMenu: gesture.useContextMenu,
+  })
+  menuButton(node).props.onClick({
+    stopPropagation() {},
+    currentTarget: {
+      focus() {},
+      getBoundingClientRect: () => ({ left: 120, bottom: 48 }),
+    },
+  })
+
+  assert.equal(gesture.calls.bound.length, 1)
+  assert.deepEqual(gesture.calls.bound[0].target, menus.calls.opened[0].target)
+  assert.equal(gesture.calls.bound[0].target.kind, MENU_TARGET)
+  // Right-click joins the pointer gesture without adding a second keyboard
+  // stop; the ellipsis button owns that role.
+  assert.equal(gesture.calls.bound[0].handlers.tabIndex, -1)
+  assert.equal(node.props.tabIndex, -1)
+  assert.equal(typeof node.props.onContextMenu, 'function')
+  unmount(fake)
+})
+
+test('leaves right-click native without the gesture factory or a menu service', () => {
+  const withMenus = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus: fakeMenus() })
+  const unbound = render(withMenus, { mode: 'flat', workspaces: [WORKSPACE] })
+  assert.equal(unbound.props.onContextMenu, undefined)
+  assert.equal(unbound.props.tabIndex, undefined)
+  // The button still opens the bridged menu; only the extra gesture is gone.
+  assert.ok(menuButton(unbound))
+  unmount(withMenus)
+
+  const gesture = fakeGesture()
+  const withoutMenus = mount({ 'dsh.workspace.view.v5': FLAT_STORE })
+  const noService = render(withoutMenus, {
+    mode: 'flat', workspaces: [WORKSPACE], useContextMenu: gesture.useContextMenu,
+  })
+  assert.equal(noService.props.onContextMenu, undefined)
+  assert.equal(gesture.calls.bound.length, 0)
+  unmount(withoutMenus)
+})
+
+test('binds right-click only where the sidebar row has a path', () => {
+  const gesture = fakeGesture()
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus: fakeMenus() })
+  const node = render(fake, {
+    mode: 'flat',
+    workspaces: [{ ...WORKSPACE, path: undefined }],
+    useContextMenu: gesture.useContextMenu,
+  })
+  assert.equal(menuButton(node), undefined)
+  assert.equal(node.props.onContextMenu, undefined)
+  assert.equal(gesture.calls.bound.length, 0)
+  unmount(fake)
+})
+
+test('survives a gesture factory that returns no bindings', () => {
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus: fakeMenus() })
+  const node = render(fake, {
+    mode: 'flat', workspaces: [WORKSPACE], useContextMenu: () => ({}),
+  })
+  assert.equal(node.props.onContextMenu, undefined)
+  assert.ok(menuButton(node))
   unmount(fake)
 })
 

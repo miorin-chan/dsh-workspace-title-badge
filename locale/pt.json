@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Nome do espaço de trabalho no cabeçalho da sessão",
-    "description": "Mostra o nome do espaço de trabalho da sessão aberta ao lado do título enquanto a barra lateral lista as sessões em uma única lista. Um botão de reticências ao lado do nome abre o menu de ações do espaço de trabalho da barra lateral, sem excluir o espaço de trabalho. As visualizações agrupadas já nomeiam cada espaço de trabalho, então o rótulo fica oculto nelas. O nome acompanha renomeações; uma sessão sem espaço de trabalho não mostra nenhum."
+    "description": "Mostra o nome do espaço de trabalho da sessão aberta ao lado do título enquanto a barra lateral lista as sessões em uma única lista. Um botão de reticências ao lado do nome, ou um clique com o botão direito sobre ele, abre o menu de ações do espaço de trabalho da barra lateral, sem excluir o espaço de trabalho. As visualizações agrupadas já nomeiam cada espaço de trabalho, então o rótulo fica oculto nelas. O nome acompanha renomeações; uma sessão sem espaço de trabalho não mostra nenhum."
   }
 }

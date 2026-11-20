@@ -6,17 +6,22 @@
  * This module puts the open Session's Workspace name immediately after the
  * Session title in the conversation header, and only while the sidebar lists
  * sessions flat. An ellipsis button beside that name opens the sidebar
- * Workspace's own "More" menu, without its delete action.
+ * Workspace's own "More" menu without its delete action; right-clicking the
+ * name opens the very same menu.
  *
  * Seam: the conversation header declares the public
  * `conversation.session.header.actions` list. An entry there receives the
  * Session scope id as the first argument of its `inject` factory, and the
  * renderer binds the standard `useWorkspaces` selector hook at the render
  * position (ui-workspace provides it), so the workspace lookup and the rename
- * follow-up need no private access. The list renders ascending by `order`,
- * right after the title, so the entry holds a leading negative order: it must
- * precede the preset label (-10), which otherwise takes the spot beside the
- * title.
+ * follow-up need no private access. The renderer also binds the standard
+ * `useContextMenu` gesture factory (ui-context-menu provides it): its
+ * `getTriggerProps` returns the same pointer and keyboard binding the sidebar
+ * workspace row spreads, so right-clicking the name reuses the official
+ * trigger instead of a local `onContextMenu`. The list renders ascending by
+ * `order`, right after the title, so the entry holds a leading negative order:
+ * it must precede the preset label (-10), which otherwise takes the spot
+ * beside the title.
  *
  * The label reuses the sidebar's presentation: the first-use Workspace's
  * stored title (`default-workspace`) becomes the shared localized default name
@@ -29,13 +34,14 @@
  * `workspace`, so the entries, their order, icons, separators, permission
  * checks, dialogs and failure toasts all belong to the contributing plugins.
  * Copying that list here would rot. Instead this plugin declares its own target
- * family and contributes one bridge entry: opening the header button resolves
- * the sidebar's `workspace` target through `ctx.contextMenus.resolve()`,
- * forwards every action except the `workspace.delete` contribution, and
- * delegates selection back to that occurrence. The shared popup then draws the
- * rows itself, so the menu stays official and dynamically gains contributions
- * from any other plugin. The bridge is read-only: it never registers, mutates
- * or dismisses the sidebar's own entries.
+ * family and contributes one bridge entry: opening from the header (button or
+ * right-click) resolves the sidebar's `workspace` target through
+ * `ctx.contextMenus.resolve()`, forwards every action except the
+ * `workspace.delete` contribution, and delegates selection back to that
+ * occurrence. The shared popup then draws the rows itself, so the menu stays
+ * official and dynamically gains contributions from any other plugin. The
+ * bridge is read-only: it never registers, mutates or dismisses the sidebar's
+ * own entries.
  *
  * The grouping mode is the one exception: ui-workspace keeps it in a browser
  * store persisted as `dsh.workspace.view.v5`, and no client service exposes
@@ -55,6 +61,9 @@
  *   is omitted rather than opening a broken popup. An empty resolved menu still
  *   opens the shared popup empty, matching how the sidebar treats a provider
  *   that offers no action.
+ * - A shell that binds no `useContextMenu` factory keeps the button working
+ *   but leaves right-click to the browser; the gesture is additive, not a
+ *   second menu implementation.
  *
  * Every listener and the poll are registered inside `ctx.effect` and removed
  * on unload with the slot entry.
@@ -404,11 +413,13 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * The label itself. Both hooks are bound by the renderer at the slot
-     * position; the component never subscribes on its own.
-     * @param props - Session scope id, the standard hooks, and the bound locale.
+     * The label itself. The selector hooks and the gesture factory are bound by
+     * the renderer at the slot position; the component never subscribes on its
+     * own and never implements the menu popup.
+     * @param props - Session scope id, the standard hooks and gesture factory,
+     *   the bridge open/close helpers, and the bound locale.
      */
-    function WorkspaceLabel({ sessionId, useWorkspaces, useFlatSidebar, useMenuReady, useMenuActive, requestMenu, closeMenu, t }) {
+    function WorkspaceLabel({ sessionId, useWorkspaces, useFlatSidebar, useMenuReady, useMenuActive, useContextMenu, requestMenu, closeMenu, t }) {
       const [menuHovered, setMenuHovered] = React.useState(false)
       const items = useWorkspaces(snapshot => snapshot?.items ?? STABLE_EMPTY_ITEMS)
       const visible = useFlatSidebar(groupBy => groupBy === 'flat' || groupBy === 'unknown')
@@ -417,14 +428,29 @@ window.__ModuleLoader__.load({
       const readMenuActive = typeof useMenuActive === 'function' ? useMenuActive : () => null
       const menuReady = readMenuReady(value => value === true)
       const activeTarget = readMenuActive(value => value)
+      // ui-context-menu binds this factory into every Slot scope. Its bindings
+      // own the official right-click and keyboard gesture; the plugin only
+      // supplies the target, so the two activation paths cannot drift.
+      const contextMenu = typeof useContextMenu === 'function' ? useContextMenu() : undefined
       if (visible !== true) return null
       const workspace = findWorkspace(items, sessionId)
       const label = workspaceLabel(workspace, resolveDefaultName(t))
       if (label === '') return null
       // The sidebar draws a Workspace menu only when the row has a path; the
-      // native reveal entry needs it, so the header button follows the same rule.
+      // native reveal entry needs it, so both header gestures follow that rule.
       const menuPath = typeof workspace.path === 'string' && workspace.path !== ''
         ? workspace.path
+        : undefined
+      const menuTarget = menuReady && typeof requestMenu === 'function' && menuPath !== undefined
+        ? {
+          kind: MENU_TARGET,
+          value: { workspaceId: workspace.workspaceId, path: menuPath, displayTitle: label },
+        }
+        : undefined
+      // Off by default in the tab order: this is a decoration beside the
+      // button, which remains the keyboard entry for the same menu.
+      const gestureProps = menuTarget !== undefined && typeof contextMenu?.getTriggerProps === 'function'
+        ? contextMenu.getTriggerProps(menuTarget, { tabIndex: -1 })
         : undefined
       const children = []
       if (FolderIcon !== undefined) {
@@ -439,7 +465,7 @@ window.__ModuleLoader__.load({
         style: TEXT_STYLE,
         title: t('hint', { workspace: label }),
       }, label))
-      if (menuReady && typeof requestMenu === 'function' && menuPath !== undefined) {
+      if (menuTarget !== undefined) {
         const expanded = activeTarget?.kind === MENU_TARGET
           && activeTarget.value?.workspaceId === workspace.workspaceId
         children.push(h('span', { key: 'divider', 'aria-hidden': 'true', style: DIVIDER_STYLE }))
@@ -470,20 +496,14 @@ window.__ModuleLoader__.load({
               return
             }
             const rect = event.currentTarget.getBoundingClientRect()
-            requestMenu({
-              kind: MENU_TARGET,
-              value: {
-                workspaceId: workspace.workspaceId,
-                path: menuPath,
-                displayTitle: label,
-              },
-            }, { x: rect.left, y: rect.bottom })
+            requestMenu(menuTarget, { x: rect.left, y: rect.bottom })
           },
         }, EllipsisIcon !== undefined ? h(EllipsisIcon, { size: 16 }) : inlineEllipsis()))
       }
       return h('span', {
         'data-session-workspace-label': '',
         style: STYLE,
+        ...gestureProps,
       }, ...children)
     }
 
