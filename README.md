@@ -38,6 +38,12 @@ Install this directory as a local bundle: **Plugins** > **Add plugin**,
 or let the agent run `install_bundle` on this directory.
 The plugin appears in **Plugins** as **Workspace name in the session header** / **会话头部显示工作区名**.
 
+## Workspace family
+
+This bundle is part of the [`dsh-workspace-family`](../dsh-workspace-family/README.md) aggregate,
+which puts it on one **Plugins** card with the workspace picker and the per-workspace agent defaults.
+The aggregate inserts the same row id, so install either this bundle or the aggregate, never both.
+
 ## Use
 
 - Open a conversation whose session belongs to a workspace while the sidebar is in **In one list** mode.
