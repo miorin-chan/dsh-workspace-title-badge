@@ -1,0 +1,5 @@
+# Activates the bundle. The Host half is inert; the Client half ships through
+# package.json `dsh.client` and carries Workspace name in the session header.
+- insert:
+    - id: dsh-session-workspace-label
+      name: 'dsh-session-workspace-label'

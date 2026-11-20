@@ -1,0 +1,56 @@
+{
+  "name": "dsh-session-workspace-label",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "description": "Shows the open session's workspace name beside its title while the sidebar lists sessions in one flat list.",
+  "type": "module",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "workspace",
+    "header",
+    "session",
+    "label"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.zh.md",
+    "AGENTS.md",
+    "AGENTS.local.md",
+    "docs/README.md"
+  ],
+  "engines": {
+    "dsh": ">=0.2.2-rc.3"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

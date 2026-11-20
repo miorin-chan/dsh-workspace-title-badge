@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Nombre del espacio de trabajo en la cabecera de la sesión",
+    "description": "Muestra el nombre del espacio de trabajo de la sesión abierta junto a su título mientras la barra lateral lista las sesiones en una sola lista. Las vistas agrupadas ya nombran cada espacio de trabajo, así que allí la etiqueta no aparece. La etiqueta sigue a un cambio de nombre; una sesión sin espacio de trabajo no muestra ninguna."
+  }
+}

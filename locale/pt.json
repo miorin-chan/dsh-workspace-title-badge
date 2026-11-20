@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Nome do espaço de trabalho no cabeçalho da sessão",
+    "description": "Mostra o nome do espaço de trabalho da sessão aberta ao lado do título enquanto a barra lateral lista as sessões em uma única lista. As visualizações agrupadas já nomeiam cada espaço de trabalho, então o rótulo fica oculto nelas. O nome acompanha renomeações; uma sessão sem espaço de trabalho não mostra nenhum."
+  }
+}
