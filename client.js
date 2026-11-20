@@ -27,7 +27,10 @@
  * stored title (`default-workspace`) becomes the shared localized default name
  * from the common locale dictionary (`workspace.defaultName`), every other
  * title stays verbatim, and the shared icon set supplies the closed folder
- * glyph. Both are optional and degrade to the plain title.
+ * glyph. Both are optional and degrade to the plain title. The ellipsis button
+ * stays collapsed until the label is hovered, the button has keyboard focus, or
+ * its menu is open; devices without hover keep it visible, so the only pointer
+ * entry does not disappear there.
  *
  * The menu is not a component of the sidebar: ui-workspace declares it as
  * structured contributions to the shared context-menu target family
@@ -182,21 +185,36 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * A hairline rule keeps the actions button from reading as a second
-     * truncation ellipsis on a long Workspace name.
+     * The button's slot collapses to nothing at rest, then reveals itself over
+     * the header's free space: the actions strip follows the title, so the
+     * reveal consumes the row's slack instead of moving the title. The width
+     * and the start margin animate together so the gap after the name closes
+     * with the button; `overflow: clip` cuts the button mid-slide.
      */
-    const DIVIDER_STYLE = {
+    const MENU_SLOT_STYLE = {
+      display: 'inline-flex',
+      alignItems: 'center',
       flex: 'none',
-      width: '1px',
-      height: '12px',
-      background: 'var(--dsw-alias-border-l1)',
-      marginInline: '2px',
+      // `clip` (not `hidden`) keeps the wrapper from becoming a scroll
+      // container that focusing the collapsed button could scroll.
+      overflow: 'clip',
+      height: '24px',
+      width: 0,
+      marginInlineStart: '-4px',
+      transition: 'width 160ms ease, margin-inline-start 160ms ease',
+    }
+
+    const MENU_SLOT_REVEALED_STYLE = {
+      ...MENU_SLOT_STYLE,
+      width: '24px',
+      marginInlineStart: 0,
     }
 
     /**
      * 24px matches the sidebar's Workspace action target. The glyph is one size
      * smaller than the row's so the control still sits inside the header's
-     * title band; the hit box does not shrink with it.
+     * title band; the hit box does not shrink with it. The button slides out
+     * from under the name rather than fading in place.
      */
     const MENU_BUTTON_STYLE = {
       display: 'inline-flex',
@@ -211,10 +229,20 @@ window.__ModuleLoader__.load({
       background: 'transparent',
       color: 'var(--dsw-alias-label-tertiary)',
       cursor: 'pointer',
+      opacity: 0,
+      transform: 'translateX(-10px)',
+      pointerEvents: 'none',
+      transition: 'opacity 120ms ease, transform 160ms ease, background-color 120ms ease, color 120ms ease',
     }
 
-    const MENU_BUTTON_HOVER_STYLE = {
+    const MENU_BUTTON_REVEALED_STYLE = {
       ...MENU_BUTTON_STYLE,
+      opacity: 1,
+      transform: 'none',
+      pointerEvents: 'auto',
+    }
+
+    const MENU_BUTTON_HOVER_ACCENTS = {
       background: 'var(--dsw-alias-interactive-bg-hover)',
       color: 'var(--dsw-alias-label-primary)',
     }
@@ -419,8 +447,10 @@ window.__ModuleLoader__.load({
      * @param props - Session scope id, the standard hooks and gesture factory,
      *   the bridge open/close helpers, and the bound locale.
      */
-    function WorkspaceLabel({ sessionId, useWorkspaces, useFlatSidebar, useMenuReady, useMenuActive, useContextMenu, requestMenu, closeMenu, t }) {
+    function WorkspaceLabel({ sessionId, useWorkspaces, useFlatSidebar, useMenuReady, useMenuActive, useContextMenu, requestMenu, closeMenu, menuAlwaysVisible, t }) {
+      const [labelHovered, setLabelHovered] = React.useState(false)
       const [menuHovered, setMenuHovered] = React.useState(false)
+      const [menuFocused, setMenuFocused] = React.useState(false)
       const items = useWorkspaces(snapshot => snapshot?.items ?? STABLE_EMPTY_ITEMS)
       const visible = useFlatSidebar(groupBy => groupBy === 'flat' || groupBy === 'unknown')
       // An older renderer may not bind the menu hooks; keep the label intact.
@@ -447,6 +477,13 @@ window.__ModuleLoader__.load({
           value: { workspaceId: workspace.workspaceId, path: menuPath, displayTitle: label },
         }
         : undefined
+      const expanded = menuTarget !== undefined && activeTarget?.kind === MENU_TARGET
+        && activeTarget.value?.workspaceId === workspace.workspaceId
+      // The button is out of the way until the pointer, keyboard focus, or its
+      // own open menu asks for it; touch shells keep it visible because they
+      // have no hover to reveal it later.
+      const revealed = menuTarget !== undefined
+        && (menuAlwaysVisible === true || labelHovered || menuFocused || expanded)
       // Off by default in the tab order: this is a decoration beside the
       // button, which remains the keyboard entry for the same menu.
       const gestureProps = menuTarget !== undefined && typeof contextMenu?.getTriggerProps === 'function'
@@ -466,10 +503,10 @@ window.__ModuleLoader__.load({
         title: t('hint', { workspace: label }),
       }, label))
       if (menuTarget !== undefined) {
-        const expanded = activeTarget?.kind === MENU_TARGET
-          && activeTarget.value?.workspaceId === workspace.workspaceId
-        children.push(h('span', { key: 'divider', 'aria-hidden': 'true', style: DIVIDER_STYLE }))
-        children.push(h('button', {
+        children.push(h('span', {
+          key: 'menuSlot',
+          style: revealed ? MENU_SLOT_REVEALED_STYLE : MENU_SLOT_STYLE,
+        }, h('button', {
           key: 'menu',
           type: 'button',
           'data-session-workspace-menu': '',
@@ -481,7 +518,11 @@ window.__ModuleLoader__.load({
           'aria-haspopup': 'menu',
           'aria-expanded': expanded,
           title: t('menu', { workspace: label }),
-          style: menuHovered ? MENU_BUTTON_HOVER_STYLE : MENU_BUTTON_STYLE,
+          style: revealed
+            ? { ...MENU_BUTTON_REVEALED_STYLE, ...(menuHovered ? MENU_BUTTON_HOVER_ACCENTS : {}) }
+            : MENU_BUTTON_STYLE,
+          onFocus: () => { setMenuFocused(true) },
+          onBlur: () => { setMenuFocused(false) },
           onPointerDown: event => { event.stopPropagation() },
           onPointerEnter: () => { setMenuHovered(true) },
           onPointerLeave: () => { setMenuHovered(false) },
@@ -498,12 +539,16 @@ window.__ModuleLoader__.load({
             const rect = event.currentTarget.getBoundingClientRect()
             requestMenu(menuTarget, { x: rect.left, y: rect.bottom })
           },
-        }, EllipsisIcon !== undefined ? h(EllipsisIcon, { size: 16 }) : inlineEllipsis()))
+        }, EllipsisIcon !== undefined ? h(EllipsisIcon, { size: 16 }) : inlineEllipsis())))
       }
       return h('span', {
         'data-session-workspace-label': '',
         style: STYLE,
         ...gestureProps,
+        ...(menuTarget !== undefined ? {
+          onPointerEnter: () => { setLabelHovered(true) },
+          onPointerLeave: () => { setLabelHovered(false) },
+        } : {}),
       }, ...children)
     }
 
@@ -523,6 +568,17 @@ window.__ModuleLoader__.load({
       inject: ['locale', 'slots'],
       apply(ctx) {
         ctx.effect(() => ctx.locale.register(NS, LABELS), `${NS}: locale`)
+
+        // Touch shells report no hover, so the ellipsis cannot appear on it;
+        // keep it visible there rather than hiding the only pointer entry.
+        const hoverCapable = (() => {
+          try {
+            const media = browserWindow()?.matchMedia?.('(hover: hover)')
+            return media === undefined ? true : media.matches === true
+          } catch {
+            return true
+          }
+        })()
 
         const storage = readStorage()
         const flatSidebar = createSignal(readGroupBy(storage))
@@ -590,7 +646,11 @@ window.__ModuleLoader__.load({
           id: ENTRY_ID,
           order: LEADING_ORDER,
           locale: NS,
-          inject: sessionId => ({ sessionId, requestMenu, closeMenu, hooks: { flatSidebar, menuReady, menuActive } }),
+          inject: sessionId => ({
+            sessionId, requestMenu, closeMenu,
+            menuAlwaysVisible: !hoverCapable,
+            hooks: { flatSidebar, menuReady, menuActive },
+          }),
         }, WorkspaceLabel)), `${NS}: header entry`)
       },
     }

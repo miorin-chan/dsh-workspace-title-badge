@@ -1,6 +1,6 @@
 {
   "name": "dsh-session-workspace-label",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "license": "MIT",
   "description": "Shows the open session's workspace name beside its title while the sidebar lists sessions in one flat list, with an ellipsis or a right-click that opens the sidebar workspace actions menu without delete.",

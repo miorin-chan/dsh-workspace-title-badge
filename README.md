@@ -1,7 +1,8 @@
 # dsh-session-workspace-label
 
 Shows the open session's **workspace name** beside its title while the sidebar lists sessions in one flat list,
-with an ellipsis or a right-click that opens that workspace's sidebar actions menu — everything except **Delete**.
+with an ellipsis that slides out on hover, or a right-click, opening that workspace's sidebar actions menu —
+everything except **Delete**.
 
 The sidebar's flat grouping mixes sessions from every workspace and draws no workspace header,
 so the name of the workspace a conversation belongs to is not visible anywhere.
@@ -10,11 +11,12 @@ clipped when long — using the sidebar's own presentation: the shared folder gl
 for the first-use workspace, the same localized default name.
 The ellipsis beside the name and a right-click on it open the same entries the sidebar's workspace "..." menu offers,
 including actions contributed by other plugins, and leave **Delete** out.
+The ellipsis stays out of the way until the name is hovered.
 It leaves the header untouched when the sidebar already names its groups.
 
 | Sidebar grouping | Before | With this plugin |
 | --- | --- | --- |
-| In one list | header shows the session title only | the workspace name with its folder icon sits immediately after the title, followed by an ellipsis |
+| In one list | header shows the session title only | the workspace name with its folder icon sits immediately after the title; hovering it slides out an ellipsis |
 | By workspace / workspace tree | the sidebar names each workspace | nothing changes |
 | Session outside every workspace | — | nothing is added |
 | First-use workspace titled `default-workspace` | the raw directory name | the localized default name, e.g. **Default workspace** / **默认工作区** |
@@ -44,7 +46,7 @@ The plugin appears in **Plugins** as **Workspace name in the session header** / 
 - A workspace still titled `default-workspace` is labeled with the same localized default name
   as the sidebar (**Default workspace**, **默认工作区**, …); a renamed workspace keeps its own title.
 - Hover the name for the tooltip **Workspace: <name>**.
-- Press the ellipsis beside the name, or right-click the name, to open the workspace's actions.
+- Hover the name to slide out the ellipsis, then press it — or right-click the name — to open the workspace's actions.
   The menu is the sidebar's menu, not a copy: **Rename**, the native **Show in Finder** entry
   when the Desktop app offers one, and any workspace action another plugin contributes.
   **Delete workspace** is the one entry this plugin removes: it stays in the sidebar's own workspace menu,
@@ -87,6 +89,7 @@ See [the design note](docs/workspace-menu.md).
   When the current peer may perform no workspace action, the menu opens empty rather than hiding the button.
 - The right-click gesture uses the renderer's `useContextMenu` binding.
   If a DSH release stops binding it, right-click falls back to the browser menu while the ellipsis keeps working.
+- Devices without hover keep the ellipsis visible, so the menu stays reachable.
 - Sessions outside every workspace (the ungrouped bucket) get no label and no menu.
 
 ## Unload

@@ -44,12 +44,21 @@ globalThis.window = {
   removeEventListener(type, listener) {
     windowListeners.get(type)?.delete(listener)
   },
+  // Desktop pointer by default; `mount` can override per test.
+  matchMedia(query) {
+    return { media: query, matches: true }
+  },
 }
 await import('../client.js')
 
+/** Values passed to React state setters during one test, in call order. */
+const stateCalls = []
 const React = {
   createElement: (type, props, ...children) => ({ type, props, children }),
-  useState: initial => [typeof initial === 'function' ? initial() : initial, () => {}],
+  useState: initial => [
+    typeof initial === 'function' ? initial() : initial,
+    value => { stateCalls.push(value) },
+  ],
 }
 /** Marker standing in for the shared folder icon component. */
 const FOLDER_ICON = function IconFolderCloseRegular() { return null }
@@ -185,8 +194,10 @@ const FLAT_STORE = JSON.stringify({ groupBy: 'flat', orderBy: 'updated', session
  * @param modules - browser modules the bundle may require.
  * @param options.menus - the Client context-menu service, or undefined.
  */
-function mount(seed = {}, modules, { menus } = {}) {
+function mount(seed = {}, modules, { menus, hover = true } = {}) {
   globalThis.window.localStorage = fakeStorage(seed)
+  // Represent a pointer device: hover reveals the collapsed ellipsis.
+  globalThis.window.matchMedia = query => ({ media: query, matches: hover })
   const fake = fakeContext({ menus })
   load(modules).apply(fake.ctx)
   return fake
@@ -250,8 +261,20 @@ function render(fake, {
 const labelText = node => node.children.find(child => child.props?.key === 'text').children[0]
 /** The hint tooltip belongs to the name, not to the whole cluster. */
 const labelTitle = node => node.children.find(child => child.props?.key === 'text').props.title
-/** The optional ellipsis button. */
-const menuButton = node => node.children.find(child => child.props?.['data-session-workspace-menu'] !== undefined)
+/** Depth-first search through the fake React tree. */
+const findNode = (children, predicate) => {
+  for (const child of children ?? []) {
+    if (child === null || typeof child !== 'object') continue
+    if (predicate(child)) return child
+    const found = findNode(child.children, predicate)
+    if (found !== undefined) return found
+  }
+  return undefined
+}
+/** The collapsible slot that holds the ellipsis button. */
+const menuSlot = node => node.children.find(child => child.props?.key === 'menuSlot')
+/** The optional ellipsis button, nested in its reveal slot. */
+const menuButton = node => findNode(node.children, child => child.props?.['data-session-workspace-menu'] !== undefined)
 
 const WORKSPACE = {
   workspaceId: 'w-1',
@@ -524,12 +547,21 @@ test('joins nested actions onto the same sidebar occurrence', async () => {
   unmount(fake)
 })
 
-test('renders the More button only with a menu service and a visible label', () => {
+test('renders the More button collapsed until the label asks for it', () => {
   const menus = fakeMenus()
   const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus })
   const node = render(fake, { mode: 'flat', workspaces: [WORKSPACE] })
+  const slot = menuSlot(node)
   const button = menuButton(node)
+  assert.ok(slot)
   assert.ok(button)
+  // Zero-width slot, clipped button, no divider: the header keeps its space.
+  assert.equal(slot.props.style.width, 0)
+  // `clip` keeps focus from scrolling the collapsed 0-width wrapper.
+  assert.equal(slot.props.style.overflow, 'clip')
+  assert.equal(slot.props.style.marginInlineStart, '-4px')
+  assert.match(slot.props.style.transition, /width 160ms/)
+  assert.equal(node.children.some(child => child.props?.key === 'divider'), false)
   assert.equal(button.type, 'button')
   assert.equal(button.props['aria-haspopup'], 'menu')
   assert.equal(button.props['aria-expanded'], false)
@@ -538,9 +570,9 @@ test('renders the More button only with a menu service and a visible label', () 
   assert.equal(button.props.style.width, '24px')
   assert.equal(button.props.style.height, '24px')
   assert.equal(button.props.style.color, 'var(--dsw-alias-label-tertiary)')
+  assert.equal(button.props.style.opacity, 0)
+  assert.equal(button.props.style.pointerEvents, 'none')
   assert.equal(button.children[0].type, ELLIPSIS_ICON)
-  // A hairline divider keeps the button from reading as a second truncation mark.
-  assert.ok(node.children.some(child => child.props?.key === 'divider'))
 
   // Grouped mode keeps the label and its button out of the header.
   assert.equal(render(fake, { workspaces: [WORKSPACE] }), null)
@@ -548,6 +580,55 @@ test('renders the More button only with a menu service and a visible label', () 
   assert.equal(menuButton(render(fake, {
     mode: 'flat', workspaces: [{ ...WORKSPACE, path: undefined }],
   })), undefined)
+  unmount(fake)
+})
+
+test('reveals the button on hover and on keyboard focus', () => {
+  const menus = fakeMenus()
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus })
+  const node = render(fake, { mode: 'flat', workspaces: [WORKSPACE] })
+  assert.equal(typeof node.props.onPointerEnter, 'function')
+  assert.equal(typeof node.props.onPointerLeave, 'function')
+  const button = menuButton(node)
+
+  stateCalls.length = 0
+  node.props.onPointerEnter()
+  assert.deepEqual(stateCalls, [true])
+  stateCalls.length = 0
+  node.props.onPointerLeave()
+  assert.deepEqual(stateCalls, [false])
+  stateCalls.length = 0
+  button.props.onFocus()
+  assert.deepEqual(stateCalls, [true])
+  stateCalls.length = 0
+  button.props.onBlur()
+  assert.deepEqual(stateCalls, [false])
+  unmount(fake)
+})
+
+test('keeps the button revealed while its menu is open', () => {
+  const menus = fakeMenus()
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus })
+  const open = { kind: MENU_TARGET, value: { workspaceId: 'w-1' } }
+  const node = render(fake, { mode: 'flat', workspaces: [WORKSPACE], active: open })
+  const slot = menuSlot(node)
+  const button = menuButton(node)
+  assert.equal(slot.props.style.width, '24px')
+  assert.equal(slot.props.style.marginInlineStart, 0)
+  assert.equal(button.props.style.opacity, 1)
+  assert.equal(button.props.style.transform, 'none')
+  assert.equal(button.props.style.pointerEvents, 'auto')
+  assert.equal(button.props['aria-expanded'], true)
+  unmount(fake)
+})
+
+test('keeps the button visible where the pointer cannot hover', () => {
+  const menus = fakeMenus()
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus, hover: false })
+  const node = render(fake, { mode: 'flat', workspaces: [WORKSPACE] })
+  assert.equal(menuSlot(node).props.style.width, '24px')
+  assert.equal(menuButton(node).props.style.opacity, 1)
+  assert.equal(menuButton(node).props['aria-expanded'], false)
   unmount(fake)
 })
 
@@ -678,7 +759,8 @@ test('falls back to a local ellipsis glyph without the shared icon module', () =
   const menus = fakeMenus()
   const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, { primitives: null }, { menus })
   const node = render(fake, { mode: 'flat', workspaces: [WORKSPACE] })
-  assert.equal(node.children.length, 3)
+  // Text plus the reveal slot; the button itself sits inside the slot.
+  assert.equal(node.children.length, 2)
   const button = menuButton(node)
   assert.equal(button.children[0].type, 'svg')
   assert.equal(button.children[0].props.width, 16)
