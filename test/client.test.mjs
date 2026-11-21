@@ -74,7 +74,7 @@ const load = ({ primitives = PRIMITIVES } = {}) => registration.factory(moduleNa
   throw new Error('unexpected module ' + moduleName)
 })
 
-assert.equal(registration.id, 'dsh-workspace-title-badge')
+assert.equal(registration.id, '@miorin/dsh-workspace-title-badge')
 
 /** A minimal observable, matching the shape the renderer binds as a hook. */
 function fakeSignal(initial) {

@@ -1,5 +1,5 @@
 # Activates the bundle. The Host half is inert; the Client half ships through
-# package.json `dsh.client` and carries Workspace Badge.
+# package.json `dsh.client` and carries Workspace Title Badge.
 - insert:
-    - id: dsh-workspace-title-badge
-      name: 'dsh-workspace-title-badge'
+    - id: workspace-title-badge
+      name: '@miorin/dsh-workspace-title-badge'

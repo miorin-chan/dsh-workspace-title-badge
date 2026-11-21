@@ -1,4 +1,4 @@
-# dsh-workspace-title-badge
+# @miorin/dsh-workspace-title-badge
 
 [English](README.md)
 
@@ -27,6 +27,6 @@
 ## 安装
 
 在 **插件** > **添加插件** 中选择本目录，或通过 `plugin_manager` 安装。
-本插件属于 [`dsh-workspace-atlas`](../dsh-workspace-atlas/README.zh.md) 聚合包；两者只能装一个。
+本插件属于 [`@miorin/dsh-workspace-atlas`](../dsh-workspace-atlas/README.zh.md) 聚合包；两者只能装一个。
 
 [菜单设计](docs/workspace-menu.md) · [项目文档](docs/README.md)
