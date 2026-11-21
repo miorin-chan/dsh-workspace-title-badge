@@ -28,7 +28,7 @@ icon key、disabled、danger、separatorBefore、afterContent 与 children。
 
 ## 桥接
 
-插件声明自己的目标族 `dsh-session-workspace-label.workspace`，值为 `{ workspaceId, path, displayTitle }`（与侧栏一致），
+插件声明自己的目标族 `dsh-workspace-title-badge.workspace`，值为 `{ workspaceId, path, displayTitle }`（与侧栏一致），
 并注册唯一一条贡献：
 
 1. 省略号把该目标交给 `contextMenus.open()`。

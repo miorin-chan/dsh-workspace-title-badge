@@ -1,12 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36" fill="none">
   <defs>
-    <linearGradient id="workspace-label-folder" x1="15" y1="10" x2="28" y2="26" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#6FB2EE"/>
-      <stop offset="1" stop-color="#3E58D6"/>
+    <linearGradient id="title-badge-compass" x1="28.5" y1="6.5" x2="8" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8FD3FF"/>
+      <stop offset="1" stop-color="#4B62E1"/>
     </linearGradient>
   </defs>
-  <path d="M6.5 15H12M6.5 21H10" stroke="#7CB7FF" stroke-opacity="0.55"
-        stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M18 10H21.5L24 13H28A3 3 0 0 1 31 16V23A3 3 0 0 1 28 26H18A3 3 0 0 1 15 23V13A3 3 0 0 1 18 10Z"
-        fill="url(#workspace-label-folder)"/>
+  <circle cx="18" cy="16.5" r="11.6" fill="url(#title-badge-compass)"/>
+  <circle cx="18" cy="16.5" r="9.2" stroke="#FFFFFF" stroke-opacity="0.18"/>
+  <g stroke="#FFFFFF" stroke-opacity="0.45" stroke-width="1.4" stroke-linecap="round">
+    <path d="M18 5.2v1.8M18 26v1.8M6.4 16.5h1.8M27.8 16.5h1.8"/>
+  </g>
+  <path d="M18 8.2l2.4 5.5L18 16.5l-2.4-2.8Z" fill="#FFFFFF"/>
+  <path d="M18 24.8l2.4-5.5L18 16.5l-2.4 2.8Z" fill="#FFFFFF" fill-opacity="0.45"/>
+  <circle cx="18" cy="16.5" r="1.4" fill="#FFFFFF"/>
+  <rect x="8.5" y="23.4" width="19" height="6.6" rx="3.3" fill="#FFFFFF"/>
+  <rect x="8.5" y="23.4" width="19" height="6.6" rx="3.3" stroke="#3F58D0" stroke-opacity="0.28"/>
+  <path d="M13 26.7h10" stroke="url(#title-badge-compass)" stroke-width="1.5" stroke-linecap="round"/>
 </svg>

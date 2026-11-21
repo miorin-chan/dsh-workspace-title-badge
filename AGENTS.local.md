@@ -6,7 +6,7 @@
 ## 范围与项目文档
 
 在侧栏采用单列表时，于会话标题旁显示所属工作区。
-本项目仍保持独立安装和启停，同时参与 `dsh-workspace-family` 聚合包；两者使用同一行 id，不能同时安装。
+本项目仍保持独立安装和启停，同时参与 `dsh-workspace-atlas` 聚合包；两者使用同一行 id，不能同时安装。
 
 [README.md](README.md) 为英文用户说明，[README.zh.md](README.zh.md) 为中文版本。
 [项目文档索引](docs/README.md) 指向行为说明、维护约束和验证入口。
@@ -15,7 +15,7 @@
 
 ## 工作区聚合
 
-本插件属于 `dsh-workspace-family` 聚合包。
+本插件属于 `dsh-workspace-atlas` 聚合包。
 新增工作区相关能力时，同步更新聚合包的 `aggregate.yml` 与文档，并保持本插件的行 id 稳定。
 聚合包与本插件不能同时安装。
 
@@ -42,8 +42,8 @@
 
 ## 实现
 
-- 本项目独立成包、独立启用/停用；通过 `dsh-workspace-family` 聚合包组合时只插入同一行 id，不复制代码，
-  也不要让别的插件 import 本包的 `client.js`。
+- 本项目独立成包、独立启用/停用；通过 `dsh-workspace-atlas` 聚合包组合时只插入同一行 id，
+  不复制代码，也不要让别的插件 import 本包的 `client.js`。
 - 显示位置只用公开面：`conversation.session.header.actions` 列表槽 + 标准 hook `useWorkspaces`；
   条目通过 `inject(sessionId)` 拿会话身份。
   列表按 `order` 升序紧跟标题渲染，条目必须用领先的负 `order`（快于 preset 标签的 `-10`）才能占住标题后第一位。
@@ -84,7 +84,7 @@
   `node scripts/build.mjs --check` 与 `node scripts/sync-types.mjs --check` 依次检查行为、类型、产物新鲜度与类型包版本。
 - 只改了源码时先 `node scripts/build.mjs` 重新生成 `index.js` / `client.js`，再用 `--check` 确认入库产物与源码一致。
 - DSH 升级后先 `node scripts/sync-types.mjs` 重新钉住类型包版本，再跑 `npm run check`。
-- 在默认工作区根运行 `node tools/new-dsh-plugin/cli.mjs --check plugins/dsh-session-workspace-label`。
+- 在默认工作区根运行 `node tools/new-dsh-plugin/cli.mjs --check plugins/dsh-workspace-title-badge`。
 - 安装、卸载及实机验证使用一次性 profile。
   报告区分夹具测试和实机观察。
 - 用 `docs/scripts/reflow md <path>` 重排修改过的英文 Markdown。

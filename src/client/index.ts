@@ -1,5 +1,5 @@
 /**
- * Browser half of `dsh-session-workspace-label`, built from this source by
+ * Browser half of `dsh-workspace-title-badge`, built from this source by
  * `node scripts/build.mjs` into the committed `client.js`.
  *
  * The sidebar's "in one list" grouping mixes sessions from every Workspace and
@@ -99,7 +99,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 /** The locale namespace this entry owns. Declared here so its dictionary keys are typed. */
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
-    'dsh-session-workspace-label': 'hint' | 'menu'
+    'dsh-workspace-title-badge': 'hint' | 'menu'
   }
 }
 
@@ -109,7 +109,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
  */
 declare module '@deepseek-ai/dsh-client-ui-context-menu/client' {
   interface ContextMenuTargetMap {
-    'dsh-session-workspace-label.workspace': {
+    'dsh-workspace-title-badge.workspace': {
       readonly workspaceId: WorkspaceId
       readonly path: string
       readonly displayTitle: string
@@ -117,7 +117,7 @@ declare module '@deepseek-ai/dsh-client-ui-context-menu/client' {
   }
 }
 
-const NS = 'dsh-session-workspace-label' as const
+const NS = 'dsh-workspace-title-badge' as const
 const SLOT = 'conversation.session.header.actions' as const
 const ENTRY_ID = 'workspace-label'
 /** ui-workspace's browser store for the session-list grouping mode. */
@@ -146,7 +146,7 @@ const LEADING_ORDER = -20
 /** The context-menu target family the sidebar's Workspace entries use. */
 const WORKSPACE_TARGET = 'workspace' as const
 /** Our own family: every activation bridges the Workspace family through it. */
-const MENU_TARGET = 'dsh-session-workspace-label.workspace' as const
+const MENU_TARGET = 'dsh-workspace-title-badge.workspace' as const
 /**
  * Contribution prefix of the sidebar's destructive entry. Action view ids
  * are `workspace.delete/<action id>`; the contribution stays the stable

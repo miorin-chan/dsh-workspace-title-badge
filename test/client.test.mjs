@@ -74,7 +74,7 @@ const load = ({ primitives = PRIMITIVES } = {}) => registration.factory(moduleNa
   throw new Error('unexpected module ' + moduleName)
 })
 
-assert.equal(registration.id, 'dsh-session-workspace-label')
+assert.equal(registration.id, 'dsh-workspace-title-badge')
 
 /** A minimal observable, matching the shape the renderer binds as a hook. */
 function fakeSignal(initial) {
@@ -287,8 +287,8 @@ const WORKSPACE = {
 
 test('registers its locale labels and one header entry', () => {
   const fake = mount()
-  assert.ok(fake.namespaces.has('dsh-session-workspace-label'))
-  assert.equal(Object.keys(fake.namespaces.get('dsh-session-workspace-label')).length, 8)
+  assert.ok(fake.namespaces.has('dsh-workspace-title-badge'))
+  assert.equal(Object.keys(fake.namespaces.get('dsh-workspace-title-badge')).length, 8)
   assert.equal(fake.entries.length, 1)
   assert.equal(fake.entries[0].descriptor.name, 'conversation.session.header.actions')
   assert.equal(fake.entries[0].descriptor.id, 'workspace-label')
@@ -417,7 +417,7 @@ test('removes the poll, the listener and the entry on unload', () => {
   assert.equal(intervals.size, 0)
   assert.equal(windowListeners.get('storage')?.size, 0)
   assert.equal(fake.entries.length, 0)
-  assert.equal(fake.namespaces.has('dsh-session-workspace-label'), false)
+  assert.equal(fake.namespaces.has('dsh-workspace-title-badge'), false)
 })
 
 // The sidebar's Workspace menu is a set of context-menu contributions. The
@@ -447,7 +447,7 @@ function sidebarViews({ renamed = 0, revealed = 0, deleted = 0 } = {}) {
   return { views, runs }
 }
 
-const MENU_TARGET = 'dsh-session-workspace-label.workspace'
+const MENU_TARGET = 'dsh-workspace-title-badge.workspace'
 const WORKSPACE_TARGET = { workspaceId: 'w-1', path: WORKSPACE.path, displayTitle: '默认工作区' }
 
 test('registers one bridge contribution for a target family of its own', () => {
@@ -651,7 +651,7 @@ test('opens the bridged target at the button’s bottom-left', () => {
   assert.equal(event.currentTarget.focused, 1)
   assert.deepEqual(menus.calls.opened, [{
     target: {
-      kind: 'dsh-session-workspace-label.workspace',
+      kind: 'dsh-workspace-title-badge.workspace',
       value: { workspaceId: 'w-1', path: WORKSPACE.path, displayTitle: '默认工作区' },
     },
     point: { x: 120, y: 48 },

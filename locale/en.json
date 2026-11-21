@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Workspace name in the session header",
-    "description": "Shows the open session's workspace name beside its title while the sidebar lists sessions in one flat list. An ellipsis beside the name, or a right-click on it, opens the sidebar workspace's own actions menu, without deleting the workspace. Grouped views already name each workspace, so the label stays hidden there. The label follows a rename; a session outside any workspace shows none."
+    "title": "Workspace Title Badge",
+    "description": "Show the session's workspace beside its title."
   }
 }
