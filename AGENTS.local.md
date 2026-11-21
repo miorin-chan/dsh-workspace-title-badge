@@ -42,6 +42,11 @@
 
 ## 实现
 
+- 用 TypeScript 实现新行为。复用与目标 DSH 版本匹配的官方类型，在接口、配置和事件中保留类型信息，
+  对未知输入先校验再收窄，并同步维护类型依赖。
+- 新实现限于 DSH 支持的插件 API 和扩展点。
+  禁止修改 DSH 源码或安装产物，也禁止用全局猴子补丁或覆写内部实现绕过边界。
+  扩展点不足时说明缺口，并将实现限制在插件能力内。
 - 本项目独立成包、独立启用/停用；通过 `@miorin/dsh-workspace-atlas` 聚合包组合时只插入同一行 id，不复制代码，
   也不要让别的插件 import 本包的 `client.js`。
 - 显示位置只用公开面：`conversation.session.header.actions` 列表槽 + 标准 hook `useWorkspaces`；
