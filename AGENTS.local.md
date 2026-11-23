@@ -105,7 +105,7 @@ Node.js 22.18 或更新版本直接运行 `.test.mts`。
   `node scripts/build.mjs --check` 与 `node scripts/sync-types.mjs --check` 依次检查行为、类型、产物新鲜度与类型包版本。
 - 只改了源码时先 `node scripts/build.mjs` 重新生成 `index.js` / `client.js`，再用 `--check` 核对产物与源码。
 - DSH 升级后先 `node scripts/sync-types.mjs` 重新钉住类型包版本，再跑 `npm run check`。
-- 在默认工作区根运行 `node tools/new-dsh-plugin/cli.mjs --check plugins/dsh-workspace-title-badge`。
+- 在默认工作区根运行 `node tools/new-dsh-plugin/cli.mts --check plugins/dsh-workspace-title-badge`。
 - 安装、卸载及实机验证使用一次性 profile。
   报告区分夹具测试和实机观察。
 - 用 `docs/scripts/reflow md <path>` 重排修改过的英文 Markdown。
