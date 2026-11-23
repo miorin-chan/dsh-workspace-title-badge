@@ -29,8 +29,13 @@ if (installDir === undefined || installDir === '') {
   process.exit(1)
 }
 
+interface Versions {
+  dsh: string
+  cordis: string
+}
+
 /** The CLI version and the Cordis version the installation carries. */
-function installedVersions() {
+function installedVersions(installDir: string): Versions {
   try {
     const dsh = JSON.parse(require('node:fs').readFileSync(resolve(installDir, 'package.json'), 'utf8'))
     const cordis = JSON.parse(require('node:fs').readFileSync(
@@ -58,13 +63,13 @@ function installedVersions() {
   }
 }
 
-const versions = installedVersions()
+const versions = installedVersions(installDir)
 const dshVersion = versions.dsh
 const cordisVersion = versions.cordis
 
-const expected = (name) => (name === '@deepseek-ai/cordis' ? cordisVersion : dshVersion)
+const expected = (name: string) => (name === '@deepseek-ai/cordis' ? cordisVersion : dshVersion)
 
-const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8'))
+const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as { devDependencies?: Record<string, string> }
 const devDependencies = pkg.devDependencies ?? {}
 const pinned = Object.keys(devDependencies).filter((name) => name.startsWith('@deepseek-ai/'))
 

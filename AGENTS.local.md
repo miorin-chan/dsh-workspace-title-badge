@@ -23,19 +23,22 @@
 
 ## 结构
 
+`npm run build:tools` 从 `scripts/` 下的 `.mts` 生成同路径 `.mjs`，Git 跟踪 TypeScript 源码。
+Node.js 22.18 或更新版本直接运行 `.test.mts`。
+
 - `src/client/index.ts` 是浏览器半的源码，`node scripts/build.mjs` 生成的 `client.js` 由 Git 忽略。
   改之前先读源码顶部的机制说明（每个取数的来源与失效方式都写在那里）。
   产物不手改，`npm run check` 里的 `--check` 保证它与源码同步。
 - `src/client/index.ts` 的工作区菜单部分只为侧栏的 `workspace` 目标族做桥接：
   自己的目标族 + 一条贡献 + 一个省略号按钮与标签右键手势，没有第二份条目清单。
 - `src/host/index.ts` 是 Host 半，保持无副作用，只用于让 bundle 行被加载。
-- `tsconfig.json`、`scripts/build.mjs`、`scripts/sync-types.mjs` 是 TypeScript 基座，
+- `tsconfig.json`、`scripts/build.mts`、`scripts/sync-types.mts` 是 TypeScript 基座，
   模板来自工作区 `tools/dsh-plugin-ts/`；类型只以 `import type` 出现，产物里没有 `@deepseek-ai/*` 运行时依赖，
   唯一例外是 module table 提供的 `@deepseek-ai/dsh-client-ui-primitives`，仍按可选模块 `require` 并检查形状。
   `devDependencies` 除各 owner 包外还包含它们声明文件引用的 slot / store / 控制器类型包；
   DSH 升级后由 `scripts/sync-types.mjs` 一起重钉，不单独手改版本。
 - `locale/*.json` 只放 Plugin Manager 读取的 `meta.title` / `meta.description`；悬停提示文案在源码的 `LABELS` 里。
-- `test/client.test.mjs` 用假的 `ctx` 与假窗口固定：注册的槽位与条目、分组/单列表两种显示判定、
+- `test/client.test.mts` 用假的 `ctx` 与假窗口固定：注册的槽位与条目、分组/单列表两种显示判定、
   持久化 store 的两种包装与损坏值、无工作区/无标题的出口、默认工作区本地化名与文件夹图标、图标模块缺失时的退化、
   轮询跟随与卸载清理；菜单桥接的目标族与贡献注册、删除过滤、选择委托、嵌套动作、关闭时释放、
   按钮显示条件与锚点、无障碍属性；按钮默认收起、悬停/焦点/菜单打开时的展开规则、无 hover 设备常驻；
