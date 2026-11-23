@@ -109,3 +109,13 @@ Describe what changed. For `feat`, name the capability directly; use a leading `
 
 Use the prefix of the commit's primary intent.
 Split commits whose intents are independent.
+
+## Release Versioning
+
+Follow [Semantic Versioning 2.0.0](https://semver.org/) for every new release.
+
+- For `0.x.x`, agents may choose only a patch increment on their own.
+  A minor increment requires explicit user authorization.
+- When the current major version is `1` or higher, default to a patch increment.
+  Agents may choose a minor increment when the scope of the changes warrants one under SemVer.
+- A major increment always requires explicit direction from the user.
