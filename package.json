@@ -56,9 +56,11 @@
   },
   "scripts": {
     "build": "node scripts/build.mjs",
+    "prepare": "npm run build 1>&2",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "node --test",
-    "check": "node --test && npm run typecheck && node scripts/build.mjs --check && node scripts/sync-types.mjs --check"
+    "test": "npm run build && npm run test:unit --",
+    "test:unit": "node --test",
+    "check": "npm run test:unit && npm run typecheck && node scripts/build.mjs --check && node scripts/sync-types.mjs --check"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "4.1.0",

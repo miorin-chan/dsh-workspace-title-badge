@@ -1,0 +1,3 @@
+# esbuild uses the optional platform binary installed from the lockfile.
+allowBuilds:
+  'esbuild@0.28.2': false
