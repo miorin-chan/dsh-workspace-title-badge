@@ -6,7 +6,7 @@
 ## 范围与项目文档
 
 在侧栏采用单列表时，于会话标题旁显示所属工作区。
-本项目仍保持独立安装和启停，同时参与 `@miorin/dsh-workspace-atlas` 聚合包；两者使用同一行 id，不能同时安装。
+本项目仍保持独立安装和启停，同时参与 `@miorin/dsh-atlas-workspace` 聚合包；两者使用同一行 id，不能同时安装。
 
 [README.md](README.md) 为英文用户说明，[README.zh.md](README.zh.md) 为中文版本。
 [项目文档索引](docs/README.md) 指向行为说明、维护约束和验证入口。
@@ -15,7 +15,7 @@
 
 ## 工作区聚合
 
-本插件属于 `@miorin/dsh-workspace-atlas` 聚合包。
+本插件属于 `@miorin/dsh-atlas-workspace` 聚合包。
 新增工作区相关能力时，同步更新聚合包的 `aggregate.yml` 与文档，并保持本插件的行 id 稳定。
 聚合包与本插件不能同时安装。
 
@@ -57,7 +57,7 @@
 - 新实现限于 DSH 支持的插件 API 和扩展点。
   禁止修改 DSH 源码或安装产物，也禁止用全局猴子补丁或覆写内部实现绕过边界。
   扩展点不足时说明缺口，并将实现限制在插件能力内。
-- 本项目独立成包、独立启用/停用；通过 `@miorin/dsh-workspace-atlas` 聚合包组合时只插入同一行 id，不复制代码，
+- 本项目独立成包、独立启用/停用；通过 `@miorin/dsh-atlas-workspace` 聚合包组合时只插入同一行 id，不复制代码，
   也不要让别的插件 import 本包的 `client.js`。
 - 显示位置只用公开面：`conversation.session.header.actions` 列表槽 + 标准 hook `useWorkspaces`；
   条目通过 `inject(sessionId)` 拿会话身份。
