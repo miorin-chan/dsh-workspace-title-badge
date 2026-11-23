@@ -23,7 +23,7 @@
 
 ## 结构
 
-- `src/client/index.ts` 是浏览器半的源码，`client.js` 由 `node scripts/build.mjs` 生成并入库。
+- `src/client/index.ts` 是浏览器半的源码，`node scripts/build.mjs` 生成的 `client.js` 由 Git 忽略。
   改之前先读源码顶部的机制说明（每个取数的来源与失效方式都写在那里）。
   产物不手改，`npm run check` 里的 `--check` 保证它与源码同步。
 - `src/client/index.ts` 的工作区菜单部分只为侧栏的 `workspace` 目标族做桥接：
@@ -97,9 +97,10 @@
 
 主版本升级由用户决定，常规迭代沿用当前主版本。
 
-- 在项目根运行 `npm run check`：`node --test`、`tsc -p tsconfig.json`、
+- 在新检出的项目目录运行 `pnpm install --frozen-lockfile` 安装依赖并生成产物，然后运行 `npm run check`。
+  `node --test`、`tsc -p tsconfig.json`、
   `node scripts/build.mjs --check` 与 `node scripts/sync-types.mjs --check` 依次检查行为、类型、产物新鲜度与类型包版本。
-- 只改了源码时先 `node scripts/build.mjs` 重新生成 `index.js` / `client.js`，再用 `--check` 确认入库产物与源码一致。
+- 只改了源码时先 `node scripts/build.mjs` 重新生成 `index.js` / `client.js`，再用 `--check` 核对产物与源码。
 - DSH 升级后先 `node scripts/sync-types.mjs` 重新钉住类型包版本，再跑 `npm run check`。
 - 在默认工作区根运行 `node tools/new-dsh-plugin/cli.mjs --check plugins/dsh-workspace-title-badge`。
 - 安装、卸载及实机验证使用一次性 profile。

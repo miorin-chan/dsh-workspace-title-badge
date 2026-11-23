@@ -13,8 +13,8 @@
  *   node scripts/build.mjs           write both artifacts
  *   node scripts/build.mjs --check   fail when an artifact is stale
  *
- * esbuild is a development dependency; both artifacts are committed. The
- * `--check` mode keeps a stale commit from reaching a release.
+ * The `prepare` script builds the local artifacts during dependency installation
+ * and packaging. Use `--check` to compare existing artifacts with the sources.
  */
 
 import { createRequire } from 'node:module'

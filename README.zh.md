@@ -26,7 +26,8 @@
 
 ## 安装
 
-在 **插件** > **添加插件** 中选择本目录，或通过 `plugin_manager` 安装。
+在新检出的目录中运行 `pnpm install --frozen-lockfile` 安装依赖并构建插件。
+然后在 **插件** > **添加插件** 中选择该目录，或通过 `plugin_manager` 安装。
 本插件属于 [`@miorin/dsh-atlas-workspace`](../dsh-atlas-workspace/README.zh.md) 聚合包；两者只能装一个。
 
 [菜单设计](docs/workspace-menu.md) · [项目文档](docs/README.md)

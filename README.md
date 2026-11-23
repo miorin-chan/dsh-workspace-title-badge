@@ -27,7 +27,8 @@ Requires DeepSeek Harness 0.2.2-rc.3 or newer.
 
 ## Install
 
-**Plugins** > **Add plugin**, or install this directory with `plugin_manager`.
+Run `pnpm install --frozen-lockfile` in a fresh checkout to install dependencies and build the plugin.
+Then select this directory in **Plugins** > **Add plugin**, or install it with `plugin_manager`.
 This bundle is part of [`@miorin/dsh-atlas-workspace`](../dsh-atlas-workspace/README.md);
 install either one, never both.
 
