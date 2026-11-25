@@ -14,6 +14,7 @@
  */
 
 import { execFileSync } from 'node:child_process'
+import { realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
@@ -81,6 +82,11 @@ export function installedVersions(): Versions {
 }
 
 async function main() {
+  if (process.argv.includes('--check') && !process.env.DSH_INSTALL_DIR && process.env.CI) {
+    console.log('skipping DSH type-pin check in CI (DSH_INSTALL_DIR is unset).')
+    return
+  }
+
   const pkg = JSON.parse(await readFile(resolve(ROOT, 'package.json'), 'utf8')) as { devDependencies?: Record<string, string> }
   const devDependencies = pkg.devDependencies ?? {}
   const pinned = Object.keys(devDependencies).filter((name) => name.startsWith('@deepseek-ai/'))
@@ -116,7 +122,7 @@ async function main() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
   await main().catch(error => {
     console.error(error instanceof Error ? error.message : String(error))
     process.exitCode = 1
