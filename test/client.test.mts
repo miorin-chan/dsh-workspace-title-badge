@@ -644,10 +644,10 @@ test('re-hides the More button after a pointer toggle without requiring blur', (
   next().props.onPointerLeave()
   assert.equal(menuSlot(next()).props.style.width, 0)
 
-  // Tab reveals it again. A pointer press on the already focused button can
-  // change input modality without firing another focus event.
-  menuButton(next()).props.onFocus({ currentTarget: { matches: () => true } })
+  // Switching to the keyboard can reveal it even without a fresh focus event.
+  menuButton(next()).props.onKeyDown({ key: 'Enter', currentTarget: { matches: selector => selector === ':focus-visible' } })
   assert.equal(menuSlot(next()).props.style.width, '24px')
+  // A pointer press can take over the still-focused button without a new focus event.
   next().props.onPointerEnter()
   menuButton(next()).props.onPointerDown({ stopPropagation })
   next().props.onPointerLeave()

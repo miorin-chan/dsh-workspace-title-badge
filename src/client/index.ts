@@ -663,6 +663,12 @@ function WorkspaceLabel({
         setMenuFocusVisible(event.currentTarget.matches(':focus-visible'))
       },
       onBlur: () => { setMenuFocusVisible(false) },
+      onKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => {
+        // Keyboard use can resume on the same element after a pointer dismissal.
+        if (!event.altKey && !event.ctrlKey && !event.metaKey && event.currentTarget.matches(':focus-visible')) {
+          setMenuFocusVisible(true)
+        }
+      },
       onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => {
         event.stopPropagation()
         // A pointer can take over an already focused button without another focus event.
