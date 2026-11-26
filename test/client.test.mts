@@ -53,12 +53,26 @@ await import('../client.js')
 
 /** Values passed to React state setters during one test, in call order. */
 const stateCalls = []
+let stateFrame
 const React = {
   createElement: (type, props, ...children) => ({ type, props, children }),
-  useState: initial => [
-    typeof initial === 'function' ? initial() : initial,
-    value => { stateCalls.push(value) },
-  ],
+  useState(initial) {
+    const frame = stateFrame
+    const index = frame === undefined ? 0 : frame.next++
+    return [frame?.values[index] ?? (typeof initial === 'function' ? initial() : initial), value => {
+      stateCalls.push(value)
+      if (frame !== undefined) frame.values[index] = value
+    }]
+  },
+}
+
+/** Re-render one entry with the state left by its previous event handlers. */
+function renderSequence(fake, options) {
+  const values = []
+  return () => {
+    stateFrame = { values, next: 0 }
+    try { return render(fake, options) } finally { stateFrame = undefined }
+  }
 }
 /** Marker standing in for the shared folder icon component. */
 const FOLDER_ICON = function IconFolderCloseRegular() { return null }
@@ -598,11 +612,46 @@ test('reveals the button on hover and on keyboard focus', () => {
   node.props.onPointerLeave()
   assert.deepEqual(stateCalls, [false])
   stateCalls.length = 0
-  button.props.onFocus()
+  button.props.onFocus({ currentTarget: { matches: selector => selector === ':focus-visible' } })
   assert.deepEqual(stateCalls, [true])
   stateCalls.length = 0
   button.props.onBlur()
   assert.deepEqual(stateCalls, [false])
+  unmount(fake)
+})
+
+test('re-hides the More button after a pointer toggle without requiring blur', () => {
+  const menus = fakeMenus()
+  const fake = mount({ 'dsh.workspace.view.v5': FLAT_STORE }, undefined, { menus })
+  const next = renderSequence(fake, { mode: 'flat', workspaces: [WORKSPACE] })
+  const stopPropagation = () => {}
+  const pointerFocus = { currentTarget: { matches: () => false } }
+  const click = {
+    stopPropagation,
+    currentTarget: { focus() {}, getBoundingClientRect: () => ({ left: 0, bottom: 0 }) },
+  }
+
+  next().props.onPointerEnter()
+  menuButton(next()).props.onPointerDown({ stopPropagation })
+  menuButton(next()).props.onFocus(pointerFocus)
+  menuButton(next()).props.onClick(click)
+  assert.equal(menuButton(next()).props['aria-expanded'], true)
+  menuButton(next()).props.onPointerDown({ stopPropagation })
+  menuButton(next()).props.onFocus(pointerFocus)
+  menuButton(next()).props.onClick(click)
+  assert.equal(menuButton(next()).props['aria-expanded'], false)
+  assert.equal(menuSlot(next()).props.style.width, '24px')
+  next().props.onPointerLeave()
+  assert.equal(menuSlot(next()).props.style.width, 0)
+
+  // Tab reveals it again. A pointer press on the already focused button can
+  // change input modality without firing another focus event.
+  menuButton(next()).props.onFocus({ currentTarget: { matches: () => true } })
+  assert.equal(menuSlot(next()).props.style.width, '24px')
+  next().props.onPointerEnter()
+  menuButton(next()).props.onPointerDown({ stopPropagation })
+  next().props.onPointerLeave()
+  assert.equal(menuSlot(next()).props.style.width, 0)
   unmount(fake)
 })
 

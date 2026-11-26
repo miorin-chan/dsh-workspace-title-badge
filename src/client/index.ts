@@ -586,7 +586,7 @@ function WorkspaceLabel({
 }: LabelProps): React.ReactNode {
   const [labelHovered, setLabelHovered] = React.useState(false)
   const [menuHovered, setMenuHovered] = React.useState(false)
-  const [menuFocused, setMenuFocused] = React.useState(false)
+  const [menuFocusVisible, setMenuFocusVisible] = React.useState(false)
   const items = useWorkspaces((snapshot) => snapshot?.items ?? STABLE_EMPTY_ITEMS)
   const visible = useFlatSidebar((groupBy) => groupBy === 'flat' || groupBy === 'unknown')
   // An older renderer may not bind the menu hooks; keep the label intact.
@@ -620,7 +620,7 @@ function WorkspaceLabel({
   // own open menu asks for it; touch shells keep it visible because they
   // have no hover to reveal it later.
   const revealed = menuTarget !== undefined
-    && (menuAlwaysVisible === true || labelHovered || menuFocused || expanded)
+    && (menuAlwaysVisible === true || labelHovered || menuFocusVisible || expanded)
   // Off by default in the tab order: this is a decoration beside the
   // button, which remains the keyboard entry for the same menu.
   const gestureProps: ContextMenuTriggerProps | undefined = menuTarget !== undefined
@@ -659,9 +659,15 @@ function WorkspaceLabel({
       style: revealed
         ? { ...MENU_BUTTON_REVEALED_STYLE, ...(menuHovered ? MENU_BUTTON_HOVER_ACCENTS : {}) }
         : MENU_BUTTON_STYLE,
-      onFocus: () => { setMenuFocused(true) },
-      onBlur: () => { setMenuFocused(false) },
-      onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => { event.stopPropagation() },
+      onFocus: (event: React.FocusEvent<HTMLButtonElement>) => {
+        setMenuFocusVisible(event.currentTarget.matches(':focus-visible'))
+      },
+      onBlur: () => { setMenuFocusVisible(false) },
+      onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => {
+        event.stopPropagation()
+        // A pointer can take over an already focused button without another focus event.
+        setMenuFocusVisible(false)
+      },
       onPointerEnter: () => { setMenuHovered(true) },
       onPointerLeave: () => { setMenuHovered(false) },
       onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
