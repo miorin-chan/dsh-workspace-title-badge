@@ -9,6 +9,13 @@
 
 需要 DeepSeek Harness 0.2.2-rc.3 或更新版本。
 
+## 实拍截图
+
+![会话标题旁的工作区标签及展开的菜单](docs/assets/screenshots/main-light.png)
+
+- 工作区标签与省略号 · [浅色](docs/assets/screenshots/entry-light.png) · [深色](docs/assets/screenshots/entry-dark.png)
+- 工作区菜单 · [浅色](docs/assets/screenshots/main-light.png) · [深色](docs/assets/screenshots/main-dark.png)
+
 ## 使用
 
 - 单列表模式下，名字紧跟标题，排在其他头部操作之前。

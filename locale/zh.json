@@ -1,6 +1,7 @@
 {
   "meta": {
     "title": "工作区标题标签",
-    "description": "在会话标题旁显示所属工作区。"
+    "description": "在会话标题旁显示所属工作区。",
+    "detail": "docs/DETAIL.zh.md"
   }
 }

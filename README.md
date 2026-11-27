@@ -10,6 +10,15 @@ and opens that Workspace's actions from an ellipsis or a right-click — without
 
 Requires DeepSeek Harness 0.2.2-rc.3 or newer.
 
+## Screenshots
+
+The DeepSeek Harness interface is shown in Chinese.
+
+![Workspace label beside the session title with its menu open](docs/assets/screenshots/main-light.png)
+
+- Label and ellipsis · [Light](docs/assets/screenshots/entry-light.png) · [Dark](docs/assets/screenshots/entry-dark.png)
+- Workspace menu · [Light](docs/assets/screenshots/main-light.png) · [Dark](docs/assets/screenshots/main-dark.png)
+
 ## Use
 
 - In flat-list mode the name follows the title, before the other header actions.
