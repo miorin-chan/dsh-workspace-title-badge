@@ -1,6 +1,7 @@
 {
   "meta": {
     "title": "Workspace Title Badge",
-    "description": "Show the session's workspace beside its title."
+    "description": "Show the session's workspace beside its title.",
+    "detail": "docs/DETAIL.md"
   }
 }

@@ -2,43 +2,23 @@
 
 [简体中文](README.zh.md)
 
-**The Workspace's name beside the session title, with its own menu.**
+Displays each session's workspace name beside its title in flat-list mode, with an ellipsis
+and right-click menu exposing workspace actions without **Delete**.
 
-When the sidebar lists Sessions in one flat list, nothing says which Workspace a conversation belongs to.
-This bundle puts the name in the conversation header, using the sidebar's folder glyph and default-name localization,
-and opens that Workspace's actions from an ellipsis or a right-click — without **Delete**.
-
-Requires DeepSeek Harness 0.2.2-rc.3 or newer.
+- Uses the sidebar's folder icon and default-name localization (`default-workspace`);
+  automatically steps aside in grouped sidebar views and standalone sessions.
+- Requires DeepSeek Harness `0.2.2-rc.3` or newer.
+  Included in **Workspace Modular Improvement Plan** (`@miorin/dsh-atlas-workspace`); install either one, never both.
+- Standalone install: run `pnpm install --frozen-lockfile` in this directory and select it
+  in **Plugins → Add plugin** (or via `plugin_manager`).
 
 ## Screenshots
 
-The DeepSeek Harness interface is shown in Chinese.
+The screenshots show the Chinese interface.
 
-![Workspace label beside the session title with its menu open](docs/assets/screenshots/main-light.png)
-
-- Label and ellipsis · [Light](docs/assets/screenshots/entry-light.png) · [Dark](docs/assets/screenshots/entry-dark.png)
-- Workspace menu · [Light](docs/assets/screenshots/main-light.png) · [Dark](docs/assets/screenshots/main-dark.png)
-
-## Use
-
-- In flat-list mode the name follows the title, before the other header actions.
-- Hover the name to slide out the ellipsis; click it or right-click the name to open the Workspace's menu.
-- `default-workspace` gets the localized default name; renamed Workspaces keep their title.
-- Grouped modes already name each Workspace, so the label steps aside.
-
-## Limits
-
-- Grouping mode comes from ui-workspace's persisted store (`dsh.workspace.view.v5`), polled once per second;
-  if it cannot be read, the label fails open instead of disappearing.
-- The menu is a bridge to the sidebar's `workspace` target family, filtered to leave out `workspace.delete`.
-- Without `useContextMenu`, right-click falls back to the browser; the ellipsis still works.
-- Sessions outside every Workspace get no label.
-
-## Install
-
-Run `pnpm install --frozen-lockfile` in a fresh checkout to install dependencies and build the plugin.
-Then select this directory in **Plugins** > **Add plugin**, or install it with `plugin_manager`.
-This bundle is part of [`@miorin/dsh-atlas-workspace`](../dsh-atlas-workspace/README.md);
-install either one, never both.
+| | Light | Dark |
+| --- | --- | --- |
+| Label and ellipsis | ![Workspace label beside the session title with ellipsis (light theme)](docs/assets/screenshots/entry-light.png) | ![Workspace label beside the session title with ellipsis (dark theme)](docs/assets/screenshots/entry-dark.png) |
+| Workspace menu | ![Workspace label beside the session title with its menu open (light theme)](docs/assets/screenshots/main-light.png) | ![Workspace label beside the session title with its menu open (dark theme)](docs/assets/screenshots/main-dark.png) |
 
 [Menu design](docs/workspace-menu.md) · [Project documentation](docs/README.md)
